@@ -1,0 +1,26 @@
+evaluator: LlamaEvaluator
+
+num_traj: 234
+order: false
+env_config:
+  id: 'gym_cards/GeneralPoint-oneline-v0'
+  target_points: 24
+  treat_face_cards_as_10: true # option should correspond  to line 4
+  resolution: 1200
+  verify_iter: 5
+  face_cards_color: "black" # black, red, mixed
+  ood: false
+
+model: llama # o1-mini # edit this line to adjust
+model_path: ""
+prompt_config:
+  use_vision: true
+  use_language: false
+  enable_verification: true
+  prompt_vision: ["Q_GeneralPoint_EQN_VL"]
+  pattern_vision: ["formula"]
+
+generation_config:
+  max_new_tokens: 256 # for llama3
+output_dir: logs/oi-test/log.jsonl
+seed: 42

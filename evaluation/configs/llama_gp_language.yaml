@@ -1,0 +1,25 @@
+evaluator: LlamaEvaluator
+
+num_traj: 234
+order: false
+env_config:
+  id: 'gym_cards/GeneralPoint-oneline-v0'
+  target_points: 24
+  treat_face_cards_as_10: true # edit rule
+  resolution: 1200
+  verify_iter: 5
+  ood: false # ood means only generate cards containing at least one jqk
+
+model: llama 
+model_path: ""
+prompt_config:
+  use_vision: false
+  use_language: true
+  enable_verification: true
+  prompt_language: ["Q_GeneralPoint_EQN_L"]
+  pattern_language: ["formula"]
+
+generation_config:
+  max_new_tokens: 256 # constraint max tokens
+output_dir: logs/llama_gp_language/in-distribution.jsonl
+seed: 42

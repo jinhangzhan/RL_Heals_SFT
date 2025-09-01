@@ -1,0 +1,23 @@
+# python
+*.egg-info/
+__pycache__/
+
+# logs
+*.json
+*.jsonl
+checkpoints/
+wandb/*
+
+*.log
+*.slurm
+dejavu/
+*.err
+
+*.jpeg
+
+wandb/
+train_ckpt/
+data/
+slurm_logs/
+
+output/

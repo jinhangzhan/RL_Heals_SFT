@@ -1,0 +1,107 @@
+evaluator: LlamaEvaluator
+num_traj: 10
+model: llama
+model_path: ""
+prompt_config: 
+  straight_line_length: 5
+  relocation: false
+  use_vision: false
+  use_language: true
+  enable_verification: true
+  prompt_language: ["Q_VIRL_L"]
+  pattern_language: ["action"]
+
+generation_config:
+  max_new_tokens: 256 # for llama3
+rule: "use_plain_card" # Option: use_plain_card
+output_dir: logs/indomain-test/log.jsonl
+seed: 12
+
+env_config:
+  id: 'gym_virl/Navigation-v0'
+  route_info_path: ""
+  resolution: 1200
+  verify_iter: 2
+  absolute_action: true
+  relocation: true
+  drop_rate: 0.5
+  straight_line_length: 5
+  
+  ###################
+  # Google Map Platform configs
+  ##################
+  platform_cfg:
+    STREET_VIEW:
+      SIZE: [ 640, 640 ]
+      HEADING: 0
+      PITCH: 0
+      FOV: 90
+      SOURCE: outdoor
+    
+    MOVER:
+      WEB_DRIVER_PATH: ""
+      FILE_TEMPLATE: panorama_no_street_view_template
+      HEADLESS: False
+
+      # moving query mode
+      STREET_VIEW_QUERY: False
+      RADIUS_QUERY:
+        ENABLED: True
+        CONDITION_HEADING_RANGE: 30
+        MAX_RADIUS: 10
+        DELTA_RADIUS: 3
+        DELTA_HEADING: 45
+        HEADING_RANGE: 20
+
+    OFFLINE:
+      ENABLED: True
+      ENABLE_SAVE_PANO: True
+      # for get street view
+      PANORAMA_DIR: "" 
+      # for relocating points to panorama id
+      GPS_TO_PANO_PATH: "" 
+      # If the distance between two points is less than this value, 
+      # they are considered the same point.
+      # Otherwise, will call the online method.
+      MAPPING_RADIUS: 20
+
+      # TODO: for nearby search
+      place_info_path: None
+  platform_save_dir: "./logs/"
+
+  ###################
+  # Navigator configs, legacy place holder and not used
+  ##################
+  navigator_cfg:
+    NAME: VisionLanguageNavigator
+
+    LANDMARK_EXTRACT:
+      PROMPT: LANDMARK_EXTRACT_TEMPLATE
+      MODEL: gpt-4-1106-preview # gpt-4-0613
+
+    LANDMARK_DETECT:
+      MANNER: visual # [visual, oracle]
+      # for visual observation only
+      NAME: CLIP
+      CANDIDATES: "æ,©,ø∆,¶,¬∂,®,others"
+      THRESH: 0.995
+      # for oracle observation only
+      ORACLE_RADIUS: 20
+      KEYPOINT_RADIUS: 5
+
+      INTERSECTION_VALID_RADIUS: 10
+
+    # not used
+    ACTION_PRED:
+      AUTO_REGRESSIVE: True
+      MODEL: gpt-4-1106-preview # gpt-4-0613
+      PROMPT: VLN_INTRO_TEMPLATE
+
+    INTERRUPT:
+      ENABLED: True
+      STATIC_COUNTER: 5
+      OPPOSITE_COUNTER: 6
+      MAX_STEPS: 30
+
+    MAX_HEADING_DIFF: 20
+    FILE_TEMPLATE: polyline_template

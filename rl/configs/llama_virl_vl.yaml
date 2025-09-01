@@ -1,0 +1,102 @@
+trainer: LlamaTrainer
+
+grad_accum_steps: 128
+# num_traj: 100
+
+
+optimizer_config:
+  init_lr: !!float 1e-6
+  eps: !!float 1e-7
+  weight_decay: 0
+  lr_max_steps: 100
+  end_lr: !!float 1e-9
+ppo_config:
+  clip_param: 0.1
+  ppo_epoch: 4
+  mini_batch_size: 1
+  value_loss_coef: 0.5
+  entropy_coef: 0.01
+  max_grad_norm: 0.01
+compute_return_kwargs:
+  use_gae: true
+  gamma: 0.9
+  gae_lambda: 0.95
+  use_proper_time_limits: False
+report_to: wandb
+run_name: "llama_rl_512_true_debug"
+num_steps: 512
+num_processes: 1
+num_updates: 20
+
+
+env_config:
+  id: 'gym_virl/Navigation-v0'
+  route_info_path: ""
+  resolution: 1200
+  verify_iter: 2
+  absolute_action: true
+  relocation: true
+  drop_rate: 0.5
+  straight_line_length: 5
+  
+  ###################
+  # Google Map Platform configs
+  ##################
+  platform_cfg:
+    STREET_VIEW:
+      SIZE: [ 640, 640 ]
+      HEADING: 0
+      PITCH: 0
+      FOV: 90
+      SOURCE: outdoor
+    
+    MOVER:
+      WEB_DRIVER_PATH: ""
+      FILE_TEMPLATE: panorama_no_street_view_template
+      HEADLESS: False
+
+      # moving query mode
+      STREET_VIEW_QUERY: False
+      RADIUS_QUERY:
+        ENABLED: True
+        CONDITION_HEADING_RANGE: 30
+        MAX_RADIUS: 10
+        DELTA_RADIUS: 3
+        DELTA_HEADING: 45
+        HEADING_RANGE: 20
+
+    OFFLINE:
+      ENABLED: True
+      ENABLE_SAVE_PANO: True
+      # for get street view
+      PANORAMA_DIR: "" 
+      # for relocating points to panorama id
+      GPS_TO_PANO_PATH: "" 
+      # If the distance between two points is less than this value, 
+      # they are considered the same point.
+      # Otherwise, will call the online method.
+      MAPPING_RADIUS: 20
+
+      # TODO: for nearby search
+      place_info_path: None
+  platform_save_dir: "./logs/"
+
+model: llama
+model_path: ""
+prompt_config: 
+  relocation: true
+  use_vision: true
+  use_language: false
+  enable_verification: true
+  prompt_vision: ["Q_VIRL_VL"]
+  pattern_vision: ["action"]
+
+generation_config:
+  temperature: 0.2
+  max_tokens: 300 # not used
+  max_new_tokens: 512 
+  thought_prob_coef: 0.5 # legacy value from RL4VLM
+  num_beams: 1 # not used
+output_dir: logs/train.jsonl # not used in training
+seed: 42
+save_ckpt: False

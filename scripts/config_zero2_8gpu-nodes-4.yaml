@@ -1,0 +1,10 @@
+compute_environment: SLURM
+distributed_type: DEEPSPEED
+mixed_precision: bf16
+
+deepspeed_plugin:               
+  zero_stage: 3
+  gradient_accumulation_steps: 128
+  offload_param_device: none
+  offload_optimizer_device: cpu
+  overlap_comm: false

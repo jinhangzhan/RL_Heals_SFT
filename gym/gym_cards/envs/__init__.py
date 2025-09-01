@@ -1,0 +1,1 @@
+from gym_cards.envs.general_points_oneline import GeneralPointEnv_oneline

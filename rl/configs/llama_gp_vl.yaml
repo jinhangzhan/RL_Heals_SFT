@@ -1,0 +1,54 @@
+trainer: LlamaTrainer
+
+grad_accum_steps: 128
+
+optimizer_config:
+  init_lr: !!float 1e-6
+  eps: !!float 1e-7
+  weight_decay: 0
+  lr_max_steps: 100
+  end_lr: !!float 1e-9
+ppo_config:
+  clip_param: 0.1
+  ppo_epoch: 4
+  mini_batch_size: 1
+  value_loss_coef: 0.5
+  entropy_coef: 0.01
+  max_grad_norm: 0.01
+compute_return_kwargs:
+  use_gae: true
+  gamma: 0.9
+  gae_lambda: 0.95
+  use_proper_time_limits: False
+report_to: wandb
+run_name: "gp_vl"
+num_steps: 256
+num_processes: 1
+num_updates: 20
+env_config:
+  id: 'gym_cards/GeneralPoint-oneline-v0'
+  target_points: 24
+  treat_face_cards_as_10: true
+  resolution: 1200
+  face_cards_color: "black"
+  verify_iter: 5
+
+model: llama
+model_path: ""
+prompt_config:
+  use_vision: true
+  use_language: false
+  enable_verification: true
+  prompt_vision: ["Q_GeneralPoint_EQN_VL"]
+  pattern_vision: ["formula"]
+
+generation_config:
+  temperature: 0.2
+  max_tokens: 300 # not used
+  max_new_tokens: 512 
+  thought_prob_coef: 0.5 # legacy value from RL4VLM
+  num_beams: 1 # not used
+output_dir: logs/train.jsonl # not used in training.
+seed: 42
+save_ckpt: False
+save_every: 1

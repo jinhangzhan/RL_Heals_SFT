@@ -1,0 +1,5 @@
+compute_environment: SLURM
+distributed_type: DEEPSPEED
+mixed_precision: bf16
+deepspeed_config: /path/RL_Heals_SFT/scripts/ds_stage3.json
+
