@@ -21,3 +21,6 @@ data/
 slurm_logs/
 
 output/
+
+# IDE files
+.idea/
