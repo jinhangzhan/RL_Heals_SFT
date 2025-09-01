@@ -29,7 +29,7 @@ This repository provides a comprehensive framework for training Large Language M
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.13
 - CUDA-compatible GPU
 - Conda or virtual environment manager
 
