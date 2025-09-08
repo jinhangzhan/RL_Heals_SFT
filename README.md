@@ -1,6 +1,11 @@
-# RL Heals SFT: Reinforcement Learning and Supervised Fine-Tuning Framework
+# Reinforcement Learning Heals OOD Forgetting in Supervised Fine-Tuning
 
-This repository provides a comprehensive framework for training Large Language Models (LLMs) using both Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL) approaches. The framework supports both **Llama** and **Qwen** model families and includes evaluation pipelines for various tasks.
+Evolution of OOD Reasoning Performance for SFT+RL    |  OOD Reasoning Performance at Three Critical Checkpoints 
+:-------------------------:|:-------------------------:
+![](https://github.com/xiaodanguoguo/RL_Heals_SFT/blob/master/figures/llama_ood_recovery_line-full.jpg)  |  ![](https://github.com/xiaodanguoguo/RL_Heals_SFT/blob/master/figures/task_acc_generalpoints_ood.jpg)
+
+
+This repository provides a comprehensive framework for training Large Language Models (LLMs) using both Supervised Fine-Tuning (SFT) and Reinforcement Learning (RL) approaches. The framework supports both **LLaMA** and **Qwen** model families and includes evaluation pipelines for various tasks.
 
 ## 🚨 Important Setup Notes
 
