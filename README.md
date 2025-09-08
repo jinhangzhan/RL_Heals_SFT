@@ -1,4 +1,4 @@
-# Reinforcement Learning Heals OOD Forgetting in Supervised Fine-Tuning
+# Reinforcement Learning Heals OOD Forgetting in Supervised Fine-Tuning (Official)
 
 Evolution of OOD Reasoning Performance for SFT+RL    |  OOD Reasoning Performance at Three Critical Checkpoints 
 :-------------------------:|:-------------------------:
