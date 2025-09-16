@@ -10,9 +10,6 @@ export CUDA_HOME=/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/
 conda activate SFTvsRL3.13
 echo "Activated conda environment SFTvsRL3.13."
 
-export HUGGINGFACE_TOKEN="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"
-export HF_HUB_TOKEN="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"
-export HF_API_TOKEN="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"
 export PYTHONPATH=/path/RL_Heals_SFT/sft/src:$PYTHONPATH
 MODEL_NAME="/path/data/Llama-3.2-11B-Vision-Instruct"
 DATA_JSON="/path/data/SFTvsRL_Data/SFT_Data/gp-l/data.json"
