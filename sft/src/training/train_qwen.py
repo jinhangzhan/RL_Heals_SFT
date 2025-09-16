@@ -140,49 +140,6 @@ def train():
     except ImportError:
         ColumnParallelLinear = RowParallelLinear = Linear
 
-    baseline_svd = {}
-    topk = training_args.svd_reg_topk
-    device = torch.cuda.current_device()
-    # cpu_dtype = torch.float32
-
-    # for name, p in tqdm(model.named_parameters(), desc="baseline"):
-    #     if not name.endswith(".weight"):
-    #         continue
-    #     if not any(k in name for k in keep_kw):
-    #         continue
-    #
-    #     W = _gather_full_param(p)
-    #     if W is None or W.numel() == 0:
-    #         continue
-    #
-    #     if W.ndim == 1:
-    #         mod = modules_dict[name.rsplit(".", 1)[0]]
-    #         if hasattr(mod, "out_features") and hasattr(mod, "in_features"):
-    #             W = W.view(mod.out_features, mod.in_features)
-    #         else:
-    #             continue
-    #     if W.ndim != 2:
-    #         continue
-    #
-    #     # W_gpu = W.half().to(device, non_blocking=True)
-    #     W = W.to(dtype=torch.float32, device=device, non_blocking=True)
-    #     k = min(topk, *W.shape)
-    #     # U, _, Vh = torch.linalg.svd(W_gpu.float(), q=k, driver="gesvda")
-    #     U, _, Vh = torch.linalg.svd(W, full_matrices=False)
-    #     # baseline_svd["module." + name] = (U.half().cpu(), Vh[:k, :].T.half().cpu())
-    #     baseline_svd["module." + name] = (U.half(), Vh[:k, :].T.half())
-    #
-    #     del W, U, Vh
-    #     torch.cuda.empty_cache()
-    #     torch.cuda.ipc_collect()
-    #     import gc, ctypes
-    #     ctypes.CDLL("libc.so.6").malloc_trim(0)
-
-    torch.cuda.synchronize()
-    torch.cuda.ipc_collect()
-    print(f"[baseline] collected {baseline_svd.keys()} matrices")
-
-    # baseline_svd = collect_baseline_svd(model, topk=training_args.svd_reg_topk)
     # import gc, ctypes
     torch.cuda.ipc_collect()
     from torch.cuda import memory
@@ -242,9 +199,7 @@ def train():
 
     data_module = make_supervised_data_module(processor=tokenizer, data_args=data_args)
 
-    trainer = QwenTrainer(model=model, tokenizer=tokenizer, args=training_args,
-        svd_reg_coeff=training_args.svd_reg_coeff,
-        svd_reg_topk=training_args.svd_reg_topk, **data_module)
+    trainer = QwenTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)

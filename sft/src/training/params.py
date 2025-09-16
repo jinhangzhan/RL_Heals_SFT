@@ -21,22 +21,6 @@ class TrainingArguments(TrainingArguments):
     tune_img_projector: bool = field(default=True)
     disable_flash_attn2: bool = field(default=True)
 
-    svd_reg_coeff: float = field(
-        default=0.0,
-        metadata={"help": "weights SVD regularization coefficient λ；0 means closed"}
-    )
-    svd_reg_topk: int = field(
-        default=4096,
-        metadata={"help": "top k singular vector"}
-    )
-    svd_reg_layers: Optional[List[str]] = field(
-        default_factory=list,
-        metadata={
-            "help": "regularization in terms of layers，\
-                         eg. ['q_proj', 'k_proj', 'mlp']"
-        },
-    )
-
     max_seq_length: int = field(
         default=131072, # This is the default max_length for phi3-vision-128k-instruct
         metadata={

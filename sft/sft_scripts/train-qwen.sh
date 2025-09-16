@@ -54,6 +54,4 @@ deepspeed  ../src/training/train_qwen.py \
     --evaluation_strategy steps \
     --eval_steps 10 \
     --dataloader_num_workers 4 \
-    --svd_reg_coeff 100000 \
-    --svd_reg_topk 512 \
     --save_only_model True 2>&1 | tee ${LOG_FILE}

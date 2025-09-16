@@ -56,24 +56,8 @@ def _ece(confs, correct, n_bins=15):
 
 class LLamaVTrainer(Trainer):
 
-    # def __init__(self, *args, processor: Optional[ProcessorMixin] = None,
-    #              baseline_svd=None,
-    #              baseline_params=None,
-    #              svd_reg_coeff=0.1,
-    #              svd_reg_topk=4096, **kwargs):
-    #     super(LLamaVTrainer, self).__init__(*args, **kwargs)
-    #     self.processor = processor
-    #     self.baseline_svd = baseline_svd or {}
-    #     self.baseline_params = baseline_params or {}
-    #     self.svd_reg_coeff = svd_reg_coeff
-    #     self.svd_reg_topk = svd_reg_topk
-    #     if not hasattr(self, "_prev_W"):
-    #         self._prev_W = {}
     def __init__(self, *args, processor: Optional[ProcessorMixin] = None,
-                 baseline_svd=None,
-                 baseline_params=None,
-                 svd_reg_coeff=0.1,
-                 svd_reg_topk=4096, **kwargs):
+                **kwargs):
         super().__init__(*args, **kwargs)
         self.processor = processor
         self._is_ood_eval = False
@@ -463,83 +447,6 @@ class LLamaVTrainer(Trainer):
 
         return _metric
 
-    def compute_loss_bak(self,
-            model,
-            inputs,
-            return_outputs=False,
-            num_items_in_batch=None,
-            **kwargs,):
-        outputs = model(**inputs)
-        task_loss = outputs["loss"]
-        print("[DEBUG] original_loss:", task_loss.item())
-        if self.svd_reg_coeff == 0.0 or not self.baseline_svd:
-            print("[DEBUG] svd_reg_coeff:", self.svd_reg_coeff, self.baseline_svd.keys())
-            return (task_loss, outputs) if return_outputs else task_loss
-
-        # reg_loss = torch.zeros((), device=task_loss.device)
-        reg_loss = []
-        for name, p in model.named_parameters():
-            if name not in self.baseline_svd:
-                continue
-
-            if hasattr(p, "ds_id"):
-                with zero.GatheredParameters([p], modifier_rank=None):
-                    if p.ds_status == ZeroParamStatus.NOT_AVAILABLE:
-                        continue
-                    W = p
-            else:
-                W = p
-            if W.ndim != 2:
-                continue
-
-            # W = W.half()
-            U0, V0 = self.baseline_svd[name]
-            # Wf = W.float().to(V0.device)
-            Wf = W.to(V0.device)
-            U0 = U0.to(dtype=Wf.dtype, device=Wf.device, non_blocking=True)
-            V0 = V0.to(dtype=Wf.dtype, device=Wf.device, non_blocking=True)
-
-
-            proj = U0 @ (U0.T @ Wf @ V0) @ V0.T
-            # res_layer = Wf - proj
-            # energy = res_layer.pow(2).sum() / (Wf.pow(2).sum() + 1e-12)
-            energy = proj.pow(2).sum() / (Wf.pow(2).sum() + 1e-12)
-            reg_loss.append(energy)
-
-            # if name.endswith(".mlp.down_proj.weight") and "layers.0" in name:
-            #     Wf_tmp = W.to(torch.float32, non_blocking=True)
-            #     fn = Wf_tmp.norm().item()
-            #     h32 = crc32(str(Wf_tmp.sum().item()).encode()) & 0xffffffff
-            #     print(f"[DEBUG] {name} ‖W‖_F={fn:.12f}  crc32={h32}")
-            #     del Wf_tmp
-            if name.endswith(".mlp.down_proj.weight") and "layers.0" in name:
-                prev = self.baseline_params.get(name)
-                Wf32 = W.to(torch.float32)
-                if prev is not None:
-                    prev = prev.to(Wf32.device)
-                    delta_max = (Wf32 - prev).abs().max().item()
-                    delta_l2 = (Wf32 - prev).pow(2).sum().sqrt().item()
-                    print(f"[Δ] max={delta_max:.3e}   L2={delta_l2:.3e}")
-                # self._prev_W[name] = Wf32.detach().cpu()
-
-            # del proj, res_layer
-            # return (res.float().pow(2).sum() / (W.float().pow(2).sum() + 1e-12))
-
-        if not reg_loss:
-            m_reg_loss = torch.zeros((), device=task_loss.device)
-        else:
-            m_reg_loss = torch.stack(reg_loss).mean()
-        # m_reg_loss = reg_loss.mean()
-        # print("reg_loss", m_reg_loss)
-        # total_loss = task_loss + self.svd_reg_coeff * m_reg_loss
-        total_loss = task_loss # TODO
-        print("[DEBUG] total_loss:", total_loss.item(), " reg loss:", m_reg_loss.item())
-
-        if return_outputs:
-            outputs["reg_loss"] = reg_loss
-            return total_loss, outputs
-        return total_loss
-
     def create_optimizer(self):
         """
         Setup the optimizer.
@@ -716,74 +623,9 @@ class LLamaVTrainer(Trainer):
 class QwenTrainer(Trainer):
 
     def __init__(self, *args, processor: Optional[ProcessorMixin] = None,
-                 baseline_svd=None,
-                 svd_reg_coeff=0.1,
-                 svd_reg_topk=512, **kwargs):
+                 **kwargs):
         super(QwenTrainer, self).__init__(*args, **kwargs)
         self.processor = processor
-        self.baseline_svd = baseline_svd or {}
-        self.svd_reg_coeff = svd_reg_coeff
-        self.svd_reg_topk = svd_reg_topk
-
-    def compute_loss_bak(self,
-                     model,
-                     inputs,
-                     return_outputs=False,
-                     num_items_in_batch=None,
-                     **kwargs, ):
-        outputs = model(**inputs)
-        task_loss = outputs["loss"]
-        print("[DEBUG] original_loss:", task_loss.item())
-        if self.svd_reg_coeff == 0.0 or not self.baseline_svd:
-            print("[DEBUG] svd_reg_coeff:", self.svd_reg_coeff, self.baseline_svd.keys())
-            return (task_loss, outputs) if return_outputs else task_loss
-
-        # reg_loss = torch.zeros((), device=task_loss.device)
-        reg_loss = []
-        for name, p in model.named_parameters():
-            if name not in self.baseline_svd:
-                continue
-
-            if hasattr(p, "ds_id"):
-                with zero.GatheredParameters([p], modifier_rank=None):
-                    if p.ds_status == ZeroParamStatus.NOT_AVAILABLE:
-                        continue
-                    W = p
-            else:
-                W = p
-            if W.ndim != 2:
-                continue
-
-            # W = W.half()
-            U0, V0 = self.baseline_svd[name]
-            # Wf = W.float().to(V0.device)
-            # force FP32 for the projection to keep enough precision
-            Wf = W.to(dtype=torch.float32,
-                      device=torch.cuda.current_device(),
-                      non_blocking=True)
-            U0 = U0.to(device=Wf.device, dtype=torch.float32, non_blocking=True)
-            V0 = V0.to(device=Wf.device, dtype=torch.float32, non_blocking=True)
-
-            proj = U0 @ (U0.T @ Wf @ V0) @ V0.T
-            res_layer = Wf - proj
-            energy = res_layer.pow(2).sum() / (Wf.pow(2).sum() + 1e-12)
-            reg_loss.append(energy)
-            del proj, res_layer
-            # return (res.float().pow(2).sum() / (W.float().pow(2).sum() + 1e-12))
-
-        if not reg_loss:
-            m_reg_loss = torch.zeros((), device=task_loss.device)
-        else:
-            m_reg_loss = torch.stack(reg_loss).mean()
-        # m_reg_loss = torch.stack(reg_loss).mean()
-        # print("reg_loss", m_reg_loss)
-        total_loss = task_loss + self.svd_reg_coeff * m_reg_loss
-        print("[DEBUG] total_loss:", total_loss.item(), " reg loss:", m_reg_loss.item())
-
-        if return_outputs:
-            outputs["reg_loss"] = reg_loss
-            return total_loss, outputs
-        return total_loss
 
     def create_optimizer(self):
         """
