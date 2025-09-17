@@ -352,11 +352,14 @@ For large models, consider:
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{your_paper,
-  title={Your Paper Title},
-  author={Your Name},
-  journal={Your Journal},
-  year={2024}
+@misc{jin2025rlfinetuninghealsood,
+      title={RL Fine-Tuning Heals OOD Forgetting in SFT}, 
+      author={Hangzhan Jin and Sitao Luan and Sicheng Lyu and Guillaume Rabusseau and Reihaneh Rabbany and Doina Precup and Mohammad Hamdaqa},
+      year={2025},
+      eprint={2509.12235},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2509.12235}, 
 }
 ```
 
