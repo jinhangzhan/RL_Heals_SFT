@@ -1,0 +1,20 @@
+evaluator: LlamaEvaluator
+num_traj: 200
+order: false
+env_config:
+  id: 'gym_rank/Rank-v0'
+  difficulty: 1
+  verify_iter: 1
+
+model: llama
+model_path: ""
+prompt_config:
+  use_vision: false
+  use_language: true
+  enable_verification: true
+  prompt_language: ["Q_Rank_L"]
+  pattern_language: ["answer"]
+
+generation_config:
+  max_new_tokens: 128
+output_dir: logs/llama_rank_language/ood.jsonl

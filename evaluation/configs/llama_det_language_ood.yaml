@@ -1,0 +1,24 @@
+evaluator: LlamaEvaluator
+
+num_traj: 200
+order: false
+env_config:
+  id: 'gym_det/Determinant-v0'
+  difficulty: 2  # Out-of-distribution
+  verify_iter: 5
+  resolution: 256
+
+model: llama
+model_path: ""
+prompt_config:
+  use_vision: false
+  use_language: true
+  enable_verification: true
+  prompt_language: ["Q_Determinant_L"]
+  pattern_language: ["answer"]
+
+generation_config:
+  max_new_tokens: 64
+output_dir: logs/llama_det_language/ood.jsonl
+seed: 42
+
