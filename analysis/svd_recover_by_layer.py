@@ -45,7 +45,8 @@ def svd_replace(Wb, Wt, k_top, k_tail):
     k_top  = min(k_top,  n)
     k_tail = min(k_tail, n - k_top)
     if k_top == k_tail == 0:   return Wt
-    if k_top + k_tail == n:    return Wb
+    if k_top + k_tail == n:
+        return (Ub @ torch.diag(St) @ Vb).to(Wt.dtype)
 
     U_new = torch.cat([Ub[:, :k_top], Ut[:, k_top:n-k_tail], Ub[:, n-k_tail:]], dim=1)
     V_new = torch.cat([Vb[:k_top, :], Vt[k_top:n-k_tail, :], Vb[n-k_tail:, :]], dim=0)
@@ -65,15 +66,21 @@ def main():
     target = MllamaForConditionalGeneration.from_pretrained(
         TARGET_DIR, torch_dtype=torch.float16, low_cpu_mem_usage=True,
         trust_remote_code=True)
+    parameter_suffixes = (
+        ".self_attn.q_proj.weight", ".self_attn.k_proj.weight",
+        ".self_attn.v_proj.weight", ".mlp.up_proj.weight",
+        ".mlp.gate_proj.weight", ".mlp.down_proj.weight",
+    )
     always_replace = {"language_model.model.embed_tokens.weight", "language_model.lm_head.weight"}
-    layer_pat = re.compile(r'model\.layers\.(\d+)\.')
+    layer_pat = re.compile(r'^language_model\.model\.layers\.(\d+)\.')
     for n, p in tqdm(target.named_parameters(), desc="SVD restore"):
         if p.ndim != 2 or n not in base_weights:
             continue
 
         m = layer_pat.search(n)
         layer_id = int(m.group(1)) if m else None
-        if (layer_id in LAYERS) or (n in always_replace):
+        if ((layer_id in LAYERS and n.endswith(parameter_suffixes))
+                or n in always_replace):
             print(n)
             p.data.copy_(svd_replace(base_weights[n].cuda(),
                                      p.data.float().cuda(),

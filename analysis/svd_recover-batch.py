@@ -9,12 +9,21 @@ parser.add_argument('--k_tail', type=int, default=0)
 args = parser.parse_args()
 
 K_TOP, K_TAIL = args.k_top, args.k_tail
+PARAMETER_SUFFIXES = (
+    ".self_attn.q_proj.weight", ".self_attn.k_proj.weight",
+    ".self_attn.v_proj.weight", ".mlp.up_proj.weight",
+    ".mlp.gate_proj.weight", ".mlp.down_proj.weight",
+)
+ALWAYS_REPLACE = {
+    "language_model.model.embed_tokens.weight", "language_model.lm_head.weight"
+}
 
 BASE_DIR   = "/path/SFT_MaxOOD"
 TARGET_DIR = "/path/SFT_END"
 OUTPUT_DIR = TARGET_DIR + f"-restored-vector-dir--{K_TOP}--{K_TAIL}"
 
 print(OUTPUT_DIR)
+
 def svd_replace_gpu_old(W_old, W_new, k_top, k_tail):
     Uo, So, Vo = torch.linalg.svd(W_old, full_matrices=False)
     Un, Sn, Vn = torch.linalg.svd(W_new, full_matrices=False)
@@ -36,7 +45,7 @@ def svd_replace_gpu(Wb, Wt, k_top, k_tail):
     if k_tail == 0 and k_top == 0:
         return Wt
     if k_top + k_tail == n:
-        return Wb
+        return (Ub @ torch.diag(St) @ Vb).to(Wt.dtype)
 
     U_new = torch.cat([Ub[:, :k_top],
                        Ut[:, k_top:n-k_tail],
@@ -48,7 +57,7 @@ def svd_replace_gpu(Wb, Wt, k_top, k_tail):
                        St[k_top:n-k_tail],
                        Sb[n-k_tail:]])
 
-    return (U_new @ torch.diag(S_new) @ V_new).to(Wt.dtype)
+    return (U_new @ torch.diag(St) @ V_new).to(Wt.dtype)
 
 def main():
     base = MllamaForConditionalGeneration.from_pretrained(
@@ -63,7 +72,9 @@ def main():
         trust_remote_code=True)
 
     for n, p in tqdm(target.named_parameters(), "SVD restore"):
-        if p.ndim == 2 and n in base_weights:
+        if (p.ndim == 2 and n in base_weights and
+                ((n.startswith("language_model.model.layers.") and
+                  n.endswith(PARAMETER_SUFFIXES)) or n in ALWAYS_REPLACE)):
             p.data.copy_(svd_replace_gpu(base_weights[n].cuda(),
                                          p.data.float().cuda(),
                                          K_TOP, K_TAIL).half().cpu())

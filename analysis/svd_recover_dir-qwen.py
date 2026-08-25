@@ -9,6 +9,12 @@ from transformers import AutoTokenizer, BitsAndBytesConfig, AutoModelForCausalLM
 args = parser.parse_args()
 
 K_TOP, K_TAIL = args.k_top, args.k_tail
+PARAMETER_SUFFIXES = (
+    ".self_attn.q_proj.weight", ".self_attn.k_proj.weight",
+    ".self_attn.v_proj.weight", ".mlp.up_proj.weight",
+    ".mlp.gate_proj.weight", ".mlp.down_proj.weight",
+)
+ALWAYS_REPLACE = {"model.embed_tokens.weight", "lm_head.weight"}
 
 BASE_DIR   = "/path/SFT_END"
 TARGET_DIR = "/path/RL"
@@ -27,7 +33,7 @@ def svd_replace_gpu(Wb, Wt, k_top, k_tail):
     if k_tail == 0 and k_top == 0:
         return Wt
     if k_top + k_tail == n:
-        return Wb
+        return (Ub @ torch.diag(St) @ Vb).to(Wt.dtype)
 
     U_new = torch.cat([Ub[:, :k_top],
                        Ut[:, k_top:n-k_tail],
@@ -56,7 +62,9 @@ def main():
         trust_remote_code=True)
 
     for n, p in tqdm(target.named_parameters(), "SVD restore"):
-        if p.ndim == 2 and n in base_weights:
+        if (p.ndim == 2 and n in base_weights and
+                ((n.startswith("model.layers.") and
+                  n.endswith(PARAMETER_SUFFIXES)) or n in ALWAYS_REPLACE)):
             print(n)
             p.data.copy_(svd_replace_gpu(base_weights[n].cuda(),
                                          p.data.float().cuda(),
